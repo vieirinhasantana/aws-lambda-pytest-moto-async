@@ -1,0 +1,98 @@
+image: python:3.9-slim
+
+stages:
+  - Lint
+  - Test
+  - SamConfig
+  - Build
+  - Deploy
+
+Lint:
+  only:
+    - main
+    - develop
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  stage: Lint
+  before_script:
+    - pip3 install flake8==5.0.4
+  script:
+    - flake8 $CI_PROJECT_DIR/src/
+
+CyclomaticComplexity:
+  only:
+    - main
+    - develop
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  stage: Test
+  before_script:
+    - pip3 install radon
+  script:
+    - sh $CI_PROJECT_DIR/build/radon.sh b
+
+Unittest:
+  only:
+    - main
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  stage: Test
+  before_script:
+    - pip3 install -r $CI_PROJECT_DIR/build/requirements.txt
+  script:
+    - sh $CI_PROJECT_DIR/build/test.sh
+
+Generate:
+  only:
+    - main
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  stage: SamConfig
+  before_script:
+    - pip3 install toml==0.10.2
+    - pip3 install setuptools==65.4.1
+    - pip3 install wheel==0.37.1
+  script:
+    - python3 $CI_PROJECT_DIR/build/generate_samconfig.py --account-id=$AWS_ACCOUNT_ID --region=$AWS_DEFAULT_REGION --config-file=$CI_PROJECT_DIR/aws/config.toml --output=$CI_PROJECT_DIR/aws/samconfig.toml --extra-parameter buildVersion=$CI_CONCURRENT_ID
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/aws/samconfig.toml
+    expire_in: 10 mins
+
+Build:
+  only:
+    - main
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  stage: Build
+  before_script:
+    - pip3 install awscli==1.25.84
+    - pip3 install aws-sam-cli==1.58.0
+    - pip3 install boto3==1.24.59
+  script:
+    - sam build --template $CI_PROJECT_DIR/aws/template.yaml --cached --parallel
+  artifacts:
+    paths:
+      - $CI_PROJECT_DIR/.aws-sam/**/*
+    expire_in: 10 mins
+
+Deploy:
+  only:
+    - main
+  stage: Deploy
+  before_script:
+    - pip3 install awscli==1.25.84
+    - pip3 install aws-sam-cli==1.58.0
+    - pip3 install boto3==1.24.59
+  script:
+    - sam deploy --no-fail-on-empty-changeset --config-file $CI_PROJECT_DIR/aws/samconfig.toml

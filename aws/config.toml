@@ -1,0 +1,11 @@
+version = 0.1
+
+[default]
+stack_name = "MOCK_TEST"
+s3_prefix = "MOCK_TEST"
+capabilities = "CAPABILITY_IAM"
+
+[732098021731.us-east-1]
+s3_bucket = "aws-sam-cli-deploy-5841bfa89d62"
+[732098021731.us-east-1.parameter_overrides]
+Role = "arn:aws:iam::accountNumber:role/role-lambda"

@@ -1,0 +1,75 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: This is service test
+
+Parameters:
+  Role:
+    Type: String
+    Description: Permission allowed services access
+
+  buildVersion:
+    Type: String
+    Description: Build version run gitlab
+
+Globals:
+  Function:
+    Runtime: python3.9
+    Timeout: 30
+    MemorySize: 128
+    Architectures:
+      - arm64
+    Layers:
+      - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPython:36
+    Tags:
+      service: mock-test
+      buildVersion: !Ref buildVersion
+
+Resources:
+  s3:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: BUCKET_TEST
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+
+  dynamo:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: DYNAMO_TABLE
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
+
+  sqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SQS_QUEUE
+      DelaySeconds: 0
+      VisibilityTimeout: 30
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt sqsDeadLatter.Arn
+        maxReceiveCount: 5
+
+  sqsDeadLatter:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: SQS-QUEUE-DEAD-LATTER
+
+  lambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: MOCK-TEST-LAMBDA
+      CodeUri: ../src/mock_test
+      Handler: app.app.lambda_handler
+      Role: !Ref Role
+      Environment:
+        Variables:
+          SQS_URL_PUBLISH: !Ref sqsQueue
+          TABLE: !Ref dynamo
+          BUCKET: !Ref s3
+
