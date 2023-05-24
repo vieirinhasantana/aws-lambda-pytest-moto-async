@@ -9,13 +9,15 @@ from .session import Session
 
 logger = Logger()
 
+
 def low_level_data_serialize(item):
     serializer = TypeSerializer()
     return {k: serializer.serialize(v) for k, v in item.items()}
 
+
 async def insert_batch_dynamo(client, items: list):
     try:
-        table_register_equities = os.getenv("TB_REGISTER_ACOES")
+        table_register_equities = os.getenv("TB_MOCK")
         return await client.batch_write_item(
             RequestItems={
                 table_register_equities: [

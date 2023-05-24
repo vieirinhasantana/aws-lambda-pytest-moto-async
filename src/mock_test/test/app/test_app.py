@@ -35,6 +35,7 @@ def load_mock_items(mock_all_register) -> list:
 
     return payload
 
+
 @pytest.mark.asyncio
 async def test_publish_sqs_package(sqs_queue_register_detail):
     session, url_sqs = sqs_queue_register_detail
@@ -46,6 +47,7 @@ async def test_publish_sqs_package(sqs_queue_register_detail):
         response["MessageId"] and response["ResponseMetadata"]["HTTPStatusCode"] == 200
     )
 
+
 @pytest.mark.asyncio
 async def test_publish_package_sqs_batch(sqs_queue_register_detail, mock_all_register):
     all_tickers = mock_all_register.get("pageProps").get("rawList")
@@ -53,11 +55,13 @@ async def test_publish_package_sqs_batch(sqs_queue_register_detail, mock_all_reg
     response = await publish_package_sqs_batch(all_tickers, session)
     assert response
 
+
 @pytest.mark.asyncio
 async def test_publish_package_sqs_batch_empty(sqs_queue_register_detail):
     session, _ = sqs_queue_register_detail
     result = await publish_package_sqs_batch([], session)
     assert result
+
 
 @pytest.mark.asyncio
 async def test_publish_package_sqs_batch_exception():

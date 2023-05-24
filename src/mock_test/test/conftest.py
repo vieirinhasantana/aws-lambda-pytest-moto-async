@@ -48,6 +48,7 @@ def sqs_server():
     yield url
     stop_process(process)
 
+
 @pytest.fixture(scope="function")
 def s3_server():
     host = "localhost"
@@ -56,6 +57,7 @@ def s3_server():
     process = start_service("s3", host, port)
     yield url
     stop_process(process)
+
 
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
@@ -66,6 +68,7 @@ async def dynamo_client(aws_credentials, dynamodb_server):
     ) as client:
         yield client
 
+
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
 async def sqs_client(aws_credentials, sqs_server):
@@ -74,6 +77,7 @@ async def sqs_client(aws_credentials, sqs_server):
         "sqs", region_name="us-east-1", endpoint_url=sqs_server
     ) as client:
         yield client
+
 
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
@@ -84,10 +88,11 @@ async def s3_client(aws_credentials, s3_server):
     ) as client:
         yield client
 
+
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
 async def dynamodb_table(dynamo_client, monkeypatch):
-    TABLE_NAME = "DYNAMO_TABLE"
+    TABLE_NAME = "TB_MOCK"
     logging.info("Requesting table creation...")
     try:
         await dynamo_client.create_table(
@@ -107,10 +112,11 @@ async def dynamodb_table(dynamo_client, monkeypatch):
     except ResourceInUseException:
         pass
 
+
 @pytest.fixture(scope="function")
 @pytest.mark.asyncio
 async def sqs_queue(sqs_client, monkeypatch):
-    QUEUE_NAME = "SQS_QUEUE"
+    QUEUE_NAME = "SQS_TEST"
     try:
         response = await sqs_client.create_queue(QueueName=QUEUE_NAME)
         queue_url = response["QueueUrl"]
@@ -132,7 +138,14 @@ async def s3_bucket(s3_client, monkeypatch):
     except ResourceInUseException:
         pass
 
+
 @pytest.fixture
-def mock_all_register():
-    with open("events/tickers.json", "r", encoding="utf8") as fp:
+def mock_event_sqs():
+    with open("events/package_sqs.json", "r", encoding="utf8") as fp:
+        return json.load(fp)
+
+
+@pytest.fixture
+def mock_event_dynamo():
+    with open("events/package_dynamo.json", "r", encoding="utf8") as fp:
         return json.load(fp)
