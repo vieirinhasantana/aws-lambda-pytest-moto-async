@@ -1,4 +1,4 @@
-from src.mock_test.test.app import Session
+from src.mock_test.app.session import Session
 
 
 def test_singleton_session_aiobotocore():
